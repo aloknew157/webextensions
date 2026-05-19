@@ -23,18 +23,15 @@ async function notify(message, iconUrl = "icon.png") {
 }
 
 async function getFromStorage(expectedtype, storeid, fallback) {
-  return await (async () => {
-    try {
-      let tmp = await browser.storage.local.get(storeid);
-      //console.debug(storeid, tmp);
-      if (typeof tmp[storeid] === expectedtype) {
-        return tmp[storeid];
-      }
-    } catch (e) {
-      console.error(e);
+  try {
+    const tmp = await browser.storage.local.get(storeid);
+    if (typeof tmp[storeid] === expectedtype) {
+      return tmp[storeid];
     }
-    return fallback;
-  })();
+  } catch (e) {
+    console.error(e);
+  }
+  return fallback;
 }
 
 // add zero padding
@@ -57,124 +54,95 @@ function getTimeStampStr() {
 }
 
 async function save() {
-  const tabs = await (async () => {
-    try {
-      let queryObj = {
-        url: ["http://*/*", "https://*/*"],
-        currentWindow: true,
-        hidden: false,
-      };
-      if (multipleHighlighted) {
-        queryObj["highlighted"] = true;
-      }
-      return await browser.tabs.query(queryObj);
-    } catch (e) {
-      console.error(e);
-      return null;
+  let tabs = [];
+  try {
+    const queryObj = {
+      url: ["http://*/*", "https://*/*"],
+      currentWindow: true,
+      hidden: false,
+    };
+    if (multipleHighlighted) {
+      queryObj.highlighted = true;
     }
-  })();
-
-  if (tabs === null) {
-    return 0;
-  }
-  if (tabs.length < 1) {
+    tabs = await browser.tabs.query(queryObj);
+  } catch (e) {
+    console.error("Error querying tabs:", e);
     return 0;
   }
 
-  const closeAfterSave = await getFromStorage(
-    "boolean",
-    "closeAfterSave",
-    false,
-  );
+  if (!tabs || tabs.length < 1) {
+    return 0;
+  }
 
-  const noTimestampSubfolder = await getFromStorage(
-    "boolean",
-    "noTimestampSubfolder",
-    false,
-  );
+  const closeAfterSave = await getFromStorage("boolean", "closeAfterSave", false);
+  const noTimestampSubfolder = await getFromStorage("boolean", "noTimestampSubfolder", false);
+  const saveFolderId = await getFromStorage("string", "saveFolder", "unfiled_____");
 
-  // get or save Folder
-  const saveFolderBM = await (async () => {
-    const saveFolderId = await getFromStorage(
-      "string",
-      "saveFolder",
-      "unfiled_____",
-    );
-    // search
-    try {
-      const arr = await browser.bookmarks.get(saveFolderId);
-      if (arr.length > 0) {
-        return arr[0];
-      }
-    } catch (e) {
-      console.error(e);
+  let saveFolderBM = null;
+  try {
+    const arr = await browser.bookmarks.get(saveFolderId);
+    if (arr.length > 0) {
+      saveFolderBM = arr[0];
     }
-    return null;
-  })();
-  if (saveFolderBM === null) {
+  } catch (e) {
+    console.error("Error getting save folder bookmark:", e);
+  }
+
+  if (!saveFolderBM) {
     return 0;
   }
 
-  if (noTimestampSubfolder) {
-    // save each tab into the created folder
-    tabs.forEach(async (tab) => {
-      let bmCreateData = {
+  let targetFolderId = saveFolderBM.id;
+
+  if (!noTimestampSubfolder) {
+    try {
+      const tsBM = await browser.bookmarks.create({
         parentId: saveFolderBM.id,
-        url: tab.url,
-      };
-      if (typeof tab.title === "string" && tab.title.trim() !== "") {
-        bmCreateData["title"] = tab.title;
-      }
-      await browser.bookmarks.create(bmCreateData);
-      if (closeAfterSave) {
-        browser.tabs.remove(tab.id);
-      }
-    });
-    // return amount of bookmarks
-    return tabs.length;
-  } else {
-    // create timestamp save folder
-    let tsBM = await (async () => {
-      try {
-        return await browser.bookmarks.create({
-          parentId: saveFolderBM.id,
-          title: getTimeStampStr() + " " + postfix,
-        });
-      } catch (e) {
-        console.error(e);
-        return null;
-      }
-    })();
-    if (tsBM === null) {
+        title: (getTimeStampStr() + " " + postfix).trim(),
+      });
+      targetFolderId = tsBM.id;
+    } catch (e) {
+      console.error("Error creating timestamp subfolder:", e);
       return 0;
     }
+  }
 
-    // save each tab into the created folder
-    tabs.forEach(async (tab) => {
-      let bmCreateData = {
-        parentId: tsBM.id,
+  // Save each tab sequentially to respect bookmark limits/quota
+  let savedCount = 0;
+  for (const tab of tabs) {
+    try {
+      const bmCreateData = {
+        parentId: targetFolderId,
         url: tab.url,
       };
       if (typeof tab.title === "string" && tab.title.trim() !== "") {
-        bmCreateData["title"] = tab.title;
+        bmCreateData.title = tab.title;
       }
       await browser.bookmarks.create(bmCreateData);
+      savedCount++;
       if (closeAfterSave) {
-        browser.tabs.remove(tab.id);
+        await browser.tabs.remove(tab.id);
       }
-    });
-    // return amount of bookmarks
-    return tabs.length;
+    } catch (err) {
+      console.error("Failed to bookmark tab:", tab.url, err);
+    }
   }
-  return 0;
+
+  return savedCount;
 }
 
 async function saveAll() {
-  await browser.browserAction.disable();
+  if (browser.action) {
+    await browser.action.disable();
+  }
+  
   const nbtabs = await save();
   notify("Saved " + nbtabs + " Tabs");
+  
   setTimeout(() => {
-    browser.browserAction.enable();
+    if (browser.action) {
+      browser.action.enable();
+    }
   }, 3000);
 }
 
@@ -192,16 +160,24 @@ browser.commands.onCommand.addListener(async (command) => {
 
 browser.runtime.onMessage.addListener(async (data, sender) => {
   if (data.cmd === "bookmark-tabs") {
-    postfix = data.postfix.trim();
+    postfix = (data.postfix || "").trim();
     await saveAll();
     postfix = "";
   }
 });
 
-browser.menus.create({
-  title: extname,
-  contexts: ["tab"],
-  onclick: async () => {
-    browser.browserAction.openPopup();
-  },
+browser.runtime.onInstalled.addListener(() => {
+  browser.menus.create({
+    id: "bookmark-tabs-menu",
+    title: extname,
+    contexts: ["tab"]
+  });
+});
+
+browser.menus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId === "bookmark-tabs-menu") {
+    if (browser.action) {
+      browser.action.openPopup();
+    }
+  }
 });

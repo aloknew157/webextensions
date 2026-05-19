@@ -1,24 +1,47 @@
 {
-  "author": "igorlogius",
-  "homepage_url": "https://github.com/igorlogius/webextensions/tree/main/bookmark-tabs",
-  "background": {
-    "scripts": ["background.js"]
-  },
-  "browser_action": {
-    "default_area": "navbar",
-    "default_popup": "popup.html"
-  },
+  "manifest_version": 3,
+  "name": "Bookmark Tabs",
+  "version": "2.0.0",
   "description": "Saves selected or all tabs into a timestamped bookmark folder",
+  "author": "4dash2 <aloktripathi.517@gmail.com>",
+  "developer": {
+    "name": "4dash2",
+    "url": "mailto:aloktripathi.517@gmail.com"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "bookmark-tabs@4dash2",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
   "icons": {
     "128": "icon.png"
   },
-  "manifest_version": 2,
-  "name": "Bookmark Tabs",
-  "permissions": ["menus", "tabs", "bookmarks", "storage"],
-  "optional_permissions": ["notifications"],
-  "commands": {
-    "_execute_browser_action": {},
-    "bookmark-tabs": {}
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
   },
-  "version": "1.6.22"
+  "action": {
+    "default_area": "navbar",
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "permissions": [
+    "menus",
+    "tabs",
+    "bookmarks",
+    "storage"
+  ],
+  "optional_permissions": [
+    "notifications"
+  ],
+  "commands": {
+    "_execute_action": {},
+    "bookmark-tabs": {}
+  }
 }

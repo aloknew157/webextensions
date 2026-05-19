@@ -1,6 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
+<html>
 <head>
   <meta charset="utf-8" />
+  <title>Bookmark Tabs</title>
   <style>
     body {
       background: lightgray;
@@ -8,6 +10,30 @@
     #saveFolder,
     #postfix {
       width: 100%;
+    }
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+      display: inline-block;
+    }
+    #saveFolderLabel {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      height: calc(100% - 4px);
+      width: calc(100% - 25px); /* Leave room for arrow */
+      background: white;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      padding-left: 4px;
+      box-sizing: border-box;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 13.3px; /* Match standard select font */
+      font-family: Arial, sans-serif;
+      border: none;
     }
     #savebtn {
       float: right;
@@ -33,12 +59,17 @@
     <fieldset>
       <legend>⚠️Persistent options</legend>
       <b>Base Save Folder</b>
-      <p>
+      <div class="select-wrapper">
+        <span id="saveFolderLabel"></span>
         <select id="saveFolder"></select>
-      </p>
+      </div>
+      <br /><br />
 
       <b>Close Tabs After Save?</b>
       <input type="checkbox" id="closeAfterSave" />
+      <br /><br />
+      <b>Show Mobile Bookmarks?</b>
+      <input type="checkbox" id="showMobileBookmarks" />
     </fieldset>
 
     <fieldset>
@@ -61,3 +92,4 @@
 
   <script src="popup.js"></script>
 </body>
+</html>

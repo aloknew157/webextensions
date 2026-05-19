@@ -12,59 +12,86 @@ function onChange(evt) {
   let value = el.type === "checkbox" ? el.checked : el.value;
   let obj = {};
 
-  //console.log(id, value, el.type);
   if (value === "") {
     return;
   }
   if (el.type === "number") {
     try {
-      value = parseInt(value);
+      value = parseInt(value, 10);
       if (isNaN(value)) {
-        value = el.min;
+        value = parseInt(el.min, 10);
       }
-      if (value < el.min) {
-        value = el.min;
+      if (value < parseInt(el.min, 10)) {
+        value = parseInt(el.min, 10);
       }
     } catch (e) {
-      value = el.min;
+      value = parseInt(el.min, 10) || 0;
     }
   }
 
   obj[id] = value;
 
-  browser.storage.local.set(obj).catch(console.error);
+  browser.storage.local.set(obj).then(() => {
+    if (id === "showMobileBookmarks") {
+      initSelect();
+    }
+  }).catch(console.error);
 }
 
-["noTimestampSubfolder", "saveFolder", "closeAfterSave"].map((id) => {
-  browser.storage.local
-    .get(id)
-    .then((obj) => {
-      let el = document.getElementById(id);
-      let val = obj[id];
+function updateOverlay() {
+  const sel = document.getElementById("saveFolder");
+  const label = document.getElementById("saveFolderLabel");
+  if (!sel || !label) return;
+  const opt = sel.options[sel.selectedIndex];
+  if (opt) {
+    label.textContent = opt.dataset.title || opt.text.trim();
+  }
+}
 
-      if (typeof val !== "undefined") {
-        if (el.type === "checkbox") {
-          el.checked = val;
-        } else {
-          el.value = val;
+// Ensure DOM is fully loaded before querying elements
+document.addEventListener("DOMContentLoaded", () => {
+  ["noTimestampSubfolder", "saveFolder", "closeAfterSave", "showMobileBookmarks"].forEach((id) => {
+    browser.storage.local
+      .get(id)
+      .then((obj) => {
+        let el = document.getElementById(id);
+        if (!el) return;
+        
+        let val = obj[id];
+
+        if (typeof val !== "undefined") {
+          if (el.type === "checkbox") {
+            el.checked = val;
+          } else {
+            el.value = val;
+            if (id === "saveFolder") {
+              // Wait a bit for initSelect to populate options before updating overlay
+              setTimeout(updateOverlay, 50);
+            }
+          }
         }
-      }
-      el.addEventListener("input", onChange);
-    })
-    .catch(console.error);
+        el.addEventListener("input", onChange);
+      })
+      .catch(console.error);
+  });
 });
 
-let folders = document.getElementById("saveFolder");
-
-function recGetFolders(node, depth = 0) {
-  let out = new Map();
+function recGetFolders(node, depth = 0, out = new Map(), showMobile = false) {
   if (typeof node.url !== "string") {
-    if (node.id !== "root________") {
+    let isRoot = node.id === "root________";
+    let isMobile = node.id === "mobile________" || node.id === "mobile" || node.title === "Mobile Bookmarks";
+
+    if (!isRoot && !(isMobile && !showMobile)) {
       out.set(node.id, { depth: depth, title: node.title });
     }
+
     if (node.children) {
-      for (let child of node.children) {
-        out = new Map([...out, ...recGetFolders(child, depth + 1)]);
+      // Always recurse into the root node. 
+      // For other folders, only recurse if they aren't hidden (like the mobile folder).
+      if (isRoot || !(isMobile && !showMobile)) {
+        for (let child of node.children) {
+          recGetFolders(child, depth + 1, out, showMobile);
+        }
       }
     }
   }
@@ -72,35 +99,42 @@ function recGetFolders(node, depth = 0) {
 }
 
 async function initSelect() {
-  //console.debug("initSelect");
+  const folders = document.getElementById("saveFolder");
+  if (!folders) return;
+
+  folders.innerHTML = ""; // Clear existing options
+
+  const showMobile = await getFromStorage("boolean", "showMobileBookmarks", false);
+
   const nodes = await browser.bookmarks.getTree();
   let out = new Map();
   let depth = 1;
   for (const node of nodes) {
-    out = new Map([...out, ...recGetFolders(node, depth)]);
+    recGetFolders(node, depth, out, showMobile);
   }
   let tmp = await getFromStorage("string", "saveFolder", "unfiled_____");
   let last_val = "";
   for (const [k, v] of out) {
-    //console.debug(v.title, k, tmp);
-    //folders.add(new Option("-".repeat(v.depth) + " " + v.title, k));
-    //folders.add(new Option(v.title + " (L" + (v.depth - 1) + ")", k));
-    o = new Option(v.title, k);
+    // Indent to represent the hierarchy
+    let indent = "\u00A0\u00A0\u00A0\u00A0".repeat(Math.max(0, v.depth - 1));
+    let displayTitle = indent + v.title;
+    let o = new Option(displayTitle, k);
+    o.dataset.title = v.title;
     folders.add(o);
     if (k === tmp) {
-      //o.selected = true;
       last_val = k;
-    } /*else{
-        o.selected = false;
-    }*/
+    }
   }
   folders.value = last_val;
+
+  folders.addEventListener("change", updateOverlay);
+  updateOverlay();
 }
 
 async function onLoad() {
   await initSelect();
 
-  document.getElementById("savebtn").addEventListener("click", async (el) => {
+  document.getElementById("savebtn").addEventListener("click", async () => {
     await browser.runtime.sendMessage({
       cmd: "bookmark-tabs",
       postfix: document.getElementById("postfix").value,
@@ -120,7 +154,7 @@ async function onLoad() {
 
   setTimeout(() => {
     document.getElementById("postfix").focus();
-  }, 1000);
+  }, 300); // 1000ms was quite long, shortened to 300ms for better UX
 }
 
 document.addEventListener("DOMContentLoaded", onLoad);
