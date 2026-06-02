@@ -7,7 +7,6 @@
     body {
       background: lightgray;
     }
-    #saveFolder,
     #postfix {
       width: 100%;
     }
@@ -16,13 +15,26 @@
       width: 100%;
       display: inline-block;
     }
+    #saveFolder {
+      width: 100%;
+      height: 24px;
+      background: white;
+      color: black;
+      border: 1px solid #a0a0a0;
+      border-radius: 3px;
+      box-sizing: border-box;
+      padding: 0 20px 0 4px;
+      font-family: Arial, sans-serif;
+      font-size: 13.3px;
+    }
     #saveFolderLabel {
       position: absolute;
-      top: 2px;
-      left: 2px;
-      height: calc(100% - 4px);
-      width: calc(100% - 25px); /* Leave room for arrow */
+      top: 1px;
+      left: 1px;
+      height: 22px;
+      width: calc(100% - 20px);
       background: white;
+      color: black;
       pointer-events: none;
       display: flex;
       align-items: center;
@@ -31,10 +43,11 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: 13.3px; /* Match standard select font */
+      font-size: 13.3px;
       font-family: Arial, sans-serif;
-      border: none;
+      border-radius: 2px 0 0 2px;
     }
+
     #savebtn {
       float: right;
     }

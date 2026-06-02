@@ -38,6 +38,7 @@ function onChange(evt) {
   }).catch(console.error);
 }
 
+
 function updateOverlay() {
   const sel = document.getElementById("saveFolder");
   const label = document.getElementById("saveFolderLabel");
@@ -64,10 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
             el.checked = val;
           } else {
             el.value = val;
-            if (id === "saveFolder") {
-              // Wait a bit for initSelect to populate options before updating overlay
-              setTimeout(updateOverlay, 50);
-            }
           }
         }
         el.addEventListener("input", onChange);
@@ -127,6 +124,8 @@ async function initSelect() {
   }
   folders.value = last_val;
 
+  // Remove prior listener in case initSelect is called again (e.g., toggling mobile bookmarks)
+  folders.removeEventListener("change", updateOverlay);
   folders.addEventListener("change", updateOverlay);
   updateOverlay();
 }
