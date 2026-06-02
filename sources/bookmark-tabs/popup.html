@@ -9,50 +9,88 @@
     }
     #postfix {
       width: 100%;
+      box-sizing: border-box;
     }
-    .select-wrapper {
+
+    /* Custom dropdown for Base Save Folder */
+    .custom-select {
       position: relative;
       width: 100%;
-      display: inline-block;
     }
-    #saveFolder {
+    .custom-select-trigger {
+      display: flex;
+      align-items: center;
       width: 100%;
       height: 24px;
       background: white;
       color: black;
       border: 1px solid #a0a0a0;
       border-radius: 3px;
+      padding: 0 4px;
       box-sizing: border-box;
-      padding: 0 20px 0 4px;
-      font-family: Arial, sans-serif;
       font-size: 13.3px;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+      text-align: left;
+      appearance: none;
+      -webkit-appearance: none;
     }
-    #saveFolderLabel {
-      position: absolute;
-      top: 1px;
-      left: 1px;
-      height: 22px;
-      width: calc(100% - 20px);
-      background: white;
-      color: black;
-      pointer-events: none;
-      display: flex;
-      align-items: center;
-      padding-left: 4px;
-      box-sizing: border-box;
-      white-space: nowrap;
+    .custom-select-trigger:focus {
+      outline: 2px solid #3584e4;
+      outline-offset: -1px;
+    }
+    .custom-select-value {
+      flex: 1;
       overflow: hidden;
+      white-space: nowrap;
       text-overflow: ellipsis;
+    }
+    .custom-select-arrow {
+      margin-left: 4px;
+      font-size: 11px;
+      color: #555;
+    }
+    .custom-select-options {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 65vh;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #a0a0a0;
+      border-radius: 0 0 3px 3px;
+      margin-top: -1px;
+      z-index: 1000;
+      list-style: none;
+      padding: 0;
+      margin-left: 0;
+    }
+    .custom-select-options.open {
+      display: block;
+    }
+    .custom-select-options li {
+      padding: 3px 6px;
+      cursor: pointer;
       font-size: 13.3px;
       font-family: Arial, sans-serif;
-      border-radius: 2px 0 0 2px;
+      white-space: nowrap;
+      color: black;
+    }
+    .custom-select-options li:hover,
+    .custom-select-options li.highlighted {
+      background: #3584e4;
+      color: white;
+    }
+    .custom-select-options li.selected {
+      font-weight: bold;
     }
 
     #savebtn {
       float: right;
     }
-    #closeAfterSave {
-    }
+
   </style>
 </head>
 <body>
@@ -72,20 +110,22 @@
     <fieldset>
       <legend>⚠️Persistent options</legend>
       <b>Base Save Folder</b>
-      <div class="select-wrapper">
-        <span id="saveFolderLabel"></span>
-        <select id="saveFolder"></select>
+      <div class="custom-select" id="saveFolderContainer">
+        <button type="button" class="custom-select-trigger" id="saveFolderTrigger"
+                aria-haspopup="listbox" aria-expanded="false">
+          <span class="custom-select-value" id="saveFolderLabel"></span>
+          <span class="custom-select-arrow">&#9662;</span>
+        </button>
+        <ul class="custom-select-options" id="saveFolderOptions" role="listbox"></ul>
       </div>
-      <br /><br />
+      <input type="hidden" id="saveFolder" />
 
       <b>Close Tabs After Save?</b>
       <input type="checkbox" id="closeAfterSave" />
       <br /><br />
       <b>Show Mobile Bookmarks?</b>
       <input type="checkbox" id="showMobileBookmarks" />
-    </fieldset>
-
-    <fieldset>
+      <br /><br />
       <b>No timestamp subfolder?</b>
       <input type="checkbox" id="noTimestampSubfolder" />
     </fieldset>
