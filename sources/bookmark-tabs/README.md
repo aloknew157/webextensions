@@ -1,4 +1,4 @@
-# Bookmark Tabs (v2.0.0)
+# Bookmark Tabs (v2.0.1)
 
 **Bookmark Tabs** is a lightweight, privacy-focused Firefox extension that allows you to instantly save your current tabs (or just the highlighted ones) into a timestamped bookmark folder.
 
