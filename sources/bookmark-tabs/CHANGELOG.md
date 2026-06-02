@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.0.1] - 2026-06-02
+## [2.0.2] - 2026-06-02
 
 ### Added
 - Complete custom dropdown component for "Base Save Folder" to replace the native browser `<select>` overlay hack.
@@ -16,3 +16,4 @@ All notable changes to this project will be documented in this file.
 - Moved the "No timestamp subfolder" option into the "Persistent options" fieldset.
 - Satisfied safety analysis (CWE-94) by eliminating variable-keyed bracket-notation on objects (now extracted cleanly via `Object.entries()`).
 - Removed empty CSS rule `#closeAfterSave {}` to satisfy emptyRules lint warnings.
+- Fixed Firefox Add-on Hub validation warning by defining and generating size-specific icon files (`icon-16.png`, `icon-32.png`, `icon-48.png`).
