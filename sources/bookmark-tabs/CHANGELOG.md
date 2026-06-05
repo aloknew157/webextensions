@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.3] - 2026-06-05
+
+### Added
+- Added size-specific icon assets (`icon-96.png`, `icon-128.png`) to support high-DPI screens and avoid generic placeholder icons in the Add-ons manager.
+
+### Fixed
+- Updated `manifest.json` and `resize.ps1` to generate and map all standard Firefox icon sizes correctly.
+
 ## [2.0.2] - 2026-06-02
 
 ### Added

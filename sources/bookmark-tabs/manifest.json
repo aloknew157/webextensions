@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Tabs",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Saves selected or all tabs into a timestamped bookmark folder",
   "author": "4dash2 <aloktripathi.517@gmail.com>",
   "developer": {
@@ -22,7 +22,8 @@
     "16": "icon-16.png",
     "32": "icon-32.png",
     "48": "icon-48.png",
-    "128": "icon.png"
+    "96": "icon-96.png",
+    "128": "icon-128.png"
   },
   "background": {
     "scripts": [

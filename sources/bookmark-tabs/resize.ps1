@@ -10,7 +10,7 @@ if (-not (Test-Path $srcPath)) {
 
 $src = [System.Drawing.Image]::FromFile($srcPath)
 
-foreach ($size in 16, 32, 48) {
+foreach ($size in 16, 32, 48, 96, 128) {
     $destPath = Join-Path $scriptPath "icon-$size.png"
     Write-Host "Creating scaled icon: icon-$size.png..."
     
