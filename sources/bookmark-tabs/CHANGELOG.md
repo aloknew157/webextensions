@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.4] - 2026-06-25
+
+### Added
+- **Dynamic Alias Count**: Displays the total number of mappings next to the section title (e.g., `Domain Aliases (9)`).
+- **Sequential Item Numbering**: Prepends ordered numbers to each domain alias row for easier scanning.
+- **Export & Import (Append)**: Added an Export button to copy domain aliases configuration JSON to the clipboard, and an Import button to paste and merge/append JSON configurations into the existing alias list.
+
+### Improved
+- **Clean Scrollable View**: Hid the scrollbar from the domain alias list visually while retaining full mouse wheel scroll functionality for a sleek design.
+
+## [2.1.3] - 2026-06-25
+
+### Fixed
+- **Nesting Domain Folders**: Prevented unnecessary same-name nested subfolders (e.g., `apache.org/apache.org/`) when saving or organizing bookmarks in folders already named after those domains (supporting direct names and domain alias mappings).
+- **Cleanup Automation**: Automatically runs the deduplication and cleanup process immediately following domain organization in the context menu handler.
+
+## [2.1.2] - 2026-06-25
+
+### Added
+- **Domain Alias Manager**: Fully interactive UI within the settings popup to view, add, and delete domain aliases. Custom mappings are immediately synchronized to the background sorting/organization systems for real-time bookmark folder flattening.
+- **Input Sanitization**: Auto-normalization for custom domain inputs (handles trimming, downcasing, stripping protocol prefixes, paths, and `www.` prefixes).
+
+## [2.1.1] - 2026-06-25
+
+### Fixed
+- **Performance**: Hoisted `domainPrefix` storage reads out of per-bookmark loops in `sortFolder` and `organizeFolderRecursive` — eliminates N×IPC calls per folder operation.
+- **Notifications**: `notify()` now checks `browser.permissions.contains()` before calling `browser.notifications.create()`, respecting the optional permission contract.
+
+### Improved
+- **URL Cleaning**: Added 16 additional tracking parameters: `wbraid`, `gbraid`, `sca_esv`, `sxsrf`, `ttclid`, `twclid`, `igshid`, `si`, `feature`, `_ga`, `_gl`, `__s`, `oly_enc_id`, `oly_anon_id`, `vero_id`, `s_cid`.
+- **Documentation**: Added inline documentation to `getBaseDomain()` noting the TLD heuristic trade-off vs. Public Suffix List.
+
+## [2.1.0] - 2026-06-25
+
+### Added
+- Added "Organize into Domain Folders" (Smart Sorter) option to group bookmarks by domain, automatically cleaning up hostnames (e.g. stripping `www.`).
+- Added "Sort Bookmarks by Domain" option to sort bookmarks and folders alphabetically by domain name, respecting bookmark separators.
+- Integrated right-click context menu options into the Firefox Bookmark Manager (Library window) to sort or organize bookmarks in any selected folder recursively (with parent deduction when right-clicking individual bookmarks).
+- Complete popup UI visual redesign to a premium, dark-mode/glassmorphic interface with custom slider-like checkboxes, elegant gradients, custom scrollbar styling, and glowing focus borders.
+
 ## [2.0.3] - 2026-06-05
 
 ### Added

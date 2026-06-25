@@ -7,6 +7,11 @@ const KNOWN_STORAGE_KEYS = new Set([
   "saveFolder",
   "closeAfterSave",
   "showMobileBookmarks",
+  "smartFolder",
+  "domainSort",
+  "domainPrefix",
+  "domainAliases",
+  "aliasSectionOpen",
 ]);
 
 async function getFromStorage(type, id, fallback) {
@@ -290,6 +295,9 @@ document.addEventListener("DOMContentLoaded", () => {
     "saveFolder",
     "closeAfterSave",
     "showMobileBookmarks",
+    "smartFolder",
+    "domainSort",
+    "domainPrefix",
   ].forEach((id) => {
     browser.storage.local
       .get(id)
@@ -314,10 +322,238 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// --- Domain Alias Manager Helpers ---
+
+const DEFAULT_DOMAIN_ALIASES = [
+  ["github.blog", "github.com"],
+  ["googleblog.com", "google.com"],
+];
+
+async function loadAliases() {
+  const stored = await getFromStorage("object", "domainAliases", null);
+  return Array.isArray(stored) ? stored : DEFAULT_DOMAIN_ALIASES;
+}
+
+async function saveAliases(aliases) {
+  await browser.storage.local.set({ domainAliases: aliases });
+}
+
+function cleanInputDomain(value) {
+  if (!value) return "";
+  let val = value.trim().toLowerCase();
+  if (val.includes("://")) {
+    try {
+      const url = new URL(val);
+      val = url.hostname;
+    } catch (e) {
+      val = val.split("://")[1];
+    }
+  }
+  val = val.split("/")[0].split(":")[0];
+  if (val.startsWith("www.")) {
+    val = val.substring(4);
+  }
+  return val.trim();
+}
+
+function renderAliases(aliases) {
+  const listEl = document.getElementById("aliasList");
+  if (!listEl) return;
+  listEl.innerHTML = "";
+
+  const titleEl = document.getElementById("aliasTitle");
+  if (titleEl) {
+    titleEl.textContent = `Domain Aliases (${aliases.length})`;
+  }
+
+  if (aliases.length === 0) {
+    const emptyEl = document.createElement("div");
+    emptyEl.className = "alias-empty";
+    emptyEl.textContent = "No aliases defined.";
+    listEl.appendChild(emptyEl);
+    return;
+  }
+
+  aliases.forEach((alias, idx) => {
+    const row = document.createElement("div");
+    row.className = "alias-row";
+
+    const numSpan = document.createElement("span");
+    numSpan.className = "alias-num";
+    numSpan.textContent = `${idx + 1}.`;
+
+    const fromSpan = document.createElement("span");
+    fromSpan.className = "alias-from";
+    fromSpan.textContent = alias[0];
+    fromSpan.title = alias[0];
+
+    const arrowSpan = document.createElement("span");
+    arrowSpan.className = "alias-arrow";
+    arrowSpan.textContent = "→";
+
+    const toSpan = document.createElement("span");
+    toSpan.className = "alias-to";
+    toSpan.textContent = alias[1];
+    toSpan.title = alias[1];
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "alias-del";
+    delBtn.textContent = "×";
+    delBtn.title = "Delete alias";
+    delBtn.addEventListener("click", async () => {
+      const updated = aliases.filter((_, i) => i !== idx);
+      await saveAliases(updated);
+      renderAliases(updated);
+    });
+
+    row.appendChild(numSpan);
+    row.appendChild(fromSpan);
+    row.appendChild(arrowSpan);
+    row.appendChild(toSpan);
+    row.appendChild(delBtn);
+    listEl.appendChild(row);
+  });
+}
+
 // --- Main Initialization ---
 
 async function onLoad() {
   await initSelect();
+
+  // --- Initialize Multi-View Transition Logic ---
+  const mainView = document.getElementById("mainView");
+  const aliasView = document.getElementById("aliasView");
+  const openAliasesBtn = document.getElementById("openAliasesBtn");
+  const aliasBackBtn = document.getElementById("aliasBackBtn");
+
+  if (openAliasesBtn && aliasBackBtn && mainView && aliasView) {
+    openAliasesBtn.addEventListener("click", () => {
+      mainView.style.display = "none";
+      aliasView.style.display = "block";
+      const inputFrom = document.getElementById("aliasFrom");
+      if (inputFrom) {
+        setTimeout(() => inputFrom.focus(), 100);
+      }
+    });
+
+    aliasBackBtn.addEventListener("click", () => {
+      aliasView.style.display = "none";
+      mainView.style.display = "block";
+      const postfixInput = document.getElementById("postfix");
+      if (postfixInput) {
+        setTimeout(() => postfixInput.focus(), 100);
+      }
+    });
+  }
+
+  const aliases = await loadAliases();
+  renderAliases(aliases);
+
+  const addBtn = document.getElementById("aliasAddBtn");
+  const inputFrom = document.getElementById("aliasFrom");
+  const inputTo = document.getElementById("aliasTo");
+
+  if (addBtn && inputFrom && inputTo) {
+    addBtn.addEventListener("click", async () => {
+      const fromVal = cleanInputDomain(inputFrom.value);
+      const toVal = cleanInputDomain(inputTo.value);
+
+      if (!fromVal || !toVal) {
+        if (!fromVal) {
+          inputFrom.style.borderColor = "#ef4444";
+          setTimeout(() => { inputFrom.style.borderColor = ""; }, 1500);
+        }
+        if (!toVal) {
+          inputTo.style.borderColor = "#ef4444";
+          setTimeout(() => { inputTo.style.borderColor = ""; }, 1500);
+        }
+        return;
+      }
+
+      if (fromVal === toVal) {
+        inputFrom.style.borderColor = "#ef4444";
+        inputTo.style.borderColor = "#ef4444";
+        setTimeout(() => {
+          inputFrom.style.borderColor = "";
+          inputTo.style.borderColor = "";
+        }, 1500);
+        return;
+      }
+
+      const current = await loadAliases();
+      const filtered = current.filter(item => item[0] !== fromVal);
+      filtered.push([fromVal, toVal]);
+
+      await saveAliases(filtered);
+      renderAliases(filtered);
+
+      inputFrom.value = "";
+      inputTo.value = "";
+      inputFrom.focus();
+    });
+
+    const handleAddKeydown = (evt) => {
+      if (evt.key === "Enter") {
+        addBtn.click();
+      }
+    };
+    inputFrom.addEventListener("keydown", handleAddKeydown);
+    inputTo.addEventListener("keydown", handleAddKeydown);
+  }
+
+  // --- Export and Import Event Listeners ---
+  const exportBtn = document.getElementById("aliasExportBtn");
+  const importBtn = document.getElementById("aliasImportBtn");
+
+  if (exportBtn) {
+    exportBtn.addEventListener("click", async () => {
+      try {
+        const current = await loadAliases();
+        const json = JSON.stringify(current);
+        await navigator.clipboard.writeText(json);
+        const oldText = exportBtn.textContent;
+        exportBtn.textContent = "Copied!";
+        setTimeout(() => { exportBtn.textContent = oldText; }, 2000);
+      } catch (err) {
+        console.error("Failed to copy aliases to clipboard:", err);
+      }
+    });
+  }
+
+  if (importBtn) {
+    importBtn.addEventListener("click", async () => {
+      const input = prompt("Paste your exported JSON aliases here:");
+      if (!input) return;
+      try {
+        const parsed = JSON.parse(input);
+        if (Array.isArray(parsed)) {
+          const current = await loadAliases();
+          const map = new Map();
+          for (const item of current) {
+            if (Array.isArray(item) && item[0] && item[1]) {
+              map.set(item[0].toLowerCase().trim(), item[1].toLowerCase().trim());
+            }
+          }
+          for (const item of parsed) {
+            if (Array.isArray(item) && item[0] && item[1]) {
+              const fromVal = cleanInputDomain(item[0]);
+              const toVal = cleanInputDomain(item[1]);
+              if (fromVal && toVal && fromVal !== toVal) {
+                map.set(fromVal, toVal);
+              }
+            }
+          }
+          const updated = Array.from(map.entries());
+          await saveAliases(updated);
+          renderAliases(updated);
+        } else {
+          alert("Invalid format: JSON must be an array of domain pairs.");
+        }
+      } catch (err) {
+        alert("Failed to parse JSON. Please make sure you copied the correct export string.");
+      }
+    });
+  }
 
   // Wire up custom dropdown toggle and keyboard
   const trigger = document.getElementById("saveFolderTrigger");
