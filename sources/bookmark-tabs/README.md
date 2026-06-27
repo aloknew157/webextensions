@@ -1,4 +1,4 @@
-# Bookmark Tabs (v2.1.4)
+# Bookmark Tabs (v2.1.5)
 
 **Bookmark Tabs** is a lightweight, privacy-focused Firefox extension that allows you to instantly save your current tabs (or just the highlighted ones) into a timestamped bookmark folder.
 
@@ -7,7 +7,7 @@
 - **Domain Alias Manager**: Map domain aliases (e.g. `github.blog` → `github.com`) directly in the popup settings to merge separate domains into a single folder.
 - **Smart Domain Folders**: Automatically organizes saved tabs into subfolders based on website domains, automatically stripping the `www.` prefix (e.g., `google.com`).
 - **Domain Sorting**: Sort bookmarks alphabetically by their domain/hostname.
-- **Bookmark Manager Context Menus**: Right-click any folder or individual bookmark in the Firefox Bookmark Manager (Library window) to sort or organize bookmarks recursively in place.
+- **Bookmark Manager Context Menus**: Right-click any folder or individual bookmark in the Firefox Bookmark Manager (Library window) to sort, organize, or flatten bookmarks recursively in place.
 - **Manifest V3**: Fully modernized for the latest Firefox security and performance standards.
 - **Custom Postfix**: Add custom tags or IDs to your saved folders.
 - **Visual Hierarchy**: Folder selection dropdown now shows indented subfolders for easier navigation.

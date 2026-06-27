@@ -337,6 +337,44 @@ async function organizeFolderRecursive(folderId) {
   }
 }
 
+async function flattenFolderRecursive(folderId) {
+  if (!folderId) return;
+
+  const bookmarksToMove = [];
+
+  async function collect(id) {
+    const children = await browser.bookmarks.getChildren(id);
+    for (const child of children) {
+      if (child.url) {
+        bookmarksToMove.push(child);
+      } else if (child.type !== "separator") {
+        await collect(child.id);
+      }
+    }
+  }
+
+  try {
+    await collect(folderId);
+
+    // Move all bookmarks directly under the target parent folder
+    for (const bm of bookmarksToMove) {
+      if (bm.parentId !== folderId) {
+        await browser.bookmarks.move(bm.id, { parentId: folderId });
+      }
+    }
+
+    // Delete all direct subfolders
+    const children = await browser.bookmarks.getChildren(folderId);
+    for (const child of children) {
+      if (!child.url && child.type !== "separator") {
+        await browser.bookmarks.removeTree(child.id);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to flatten folder:", folderId, err);
+  }
+}
+
 async function sortFolderRecursive(folderId) {
   if (!folderId) return;
   try {
@@ -770,6 +808,13 @@ browser.runtime.onInstalled.addListener(() => {
     title: "Dedupe \u0026 Cleanup",
     contexts: ["bookmark"]
   });
+
+  browser.menus.create({
+    id: "bookmark-flatten-folder",
+    parentId: "bookmark-tabs-bookmark-root",
+    title: "Flatten Folder (Keep URLs only)",
+    contexts: ["bookmark"]
+  });
 });
 
 browser.menus.onClicked.addListener(async (info, tab) => {
@@ -785,6 +830,7 @@ browser.menus.onClicked.addListener(async (info, tab) => {
     "bookmark-organize-domain",
     "bookmark-sort-domain",
     "bookmark-dedupe-cleanup",
+    "bookmark-flatten-folder",
   ]);
   if (!bookmarkActions.has(info.menuItemId)) return;
 
@@ -813,6 +859,9 @@ browser.menus.onClicked.addListener(async (info, tab) => {
   } else if (info.menuItemId === "bookmark-dedupe-cleanup") {
     await dedupeAndCleanupFolder(folderId);
     notify("Bookmarks deduped & cleaned up");
+  } else if (info.menuItemId === "bookmark-flatten-folder") {
+    await flattenFolderRecursive(folderId);
+    notify("Folder flattened (subfolders removed)");
   }
 });
 

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.5] - 2026-06-27
+
+### Added
+- **Flatten Folder Menu Option**: Added a "Flatten Folder (Keep URLs only)" option to the Bookmark Manager context menu. This recursively pulls all bookmarks from all nested subfolders directly into the selected folder and completely deletes the empty subfolders.
+
 ## [2.1.4] - 2026-06-25
 
 ### Added
